@@ -1,0 +1,66 @@
+import pandas as pd
+import gdown
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import Normalizer
+
+# Step 1: Use gdown to download the file from Google Drive
+file_id = 'fileID'  # Use your file ID
+gdown.download(f'https://drive.google.com/uc?id={file_id}', 'NonLinear.csv', quiet=False)
+
+# Step 2: Load the dataset
+data = pd.read_csv('NonLinear.csv')
+
+# Step 3: Inspect the columns in the dataset
+print("Dataset Preview:")
+print(data.head())  # Check the first few rows of the dataset
+print("Columns in dataset:", data.columns)
+
+# Step 4: Preprocess the data
+# Select the feature columns and target column
+X = data[['x1', 'x2', 'x3', 'x4', 'x5']].values  # All features as input (multiple features)
+y = data['y'].values  # Target variable
+
+# Normalize the data row-wise (samples)
+scaler = Normalizer()
+X_scaled = scaler.fit_transform(X)  # Apply normalization
+
+# Convert to TensorFlow tensors
+X_tensor = tf.constant(X_scaled, dtype=tf.float32)
+y_tensor = tf.constant(y, dtype=tf.float32)
+
+# Step 5: Define the neural network model
+class NonLinearModel(tf.keras.Model):
+    def __init__(self):
+        super(NonLinearModel, self).__init__()
+        self.dense1 = tf.keras.layers.Dense(10, activation='relu')  # Hidden layer with ReLU
+        self.output_layer = tf.keras.layers.Dense(1)  # Output layer for regression
+
+    def call(self, x):
+        x = self.dense1(x)  # Pass input through hidden layer
+        return self.output_layer(x)  # Output layer
+
+# Instantiate the model
+model = NonLinearModel()
+
+# Step 6: Compile the model
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+# Step 7: Train the model
+history = model.fit(X_tensor, y_tensor, epochs=1000, batch_size=32, verbose=0)
+
+# Step 8: Visualize the results (use only the first feature for simplicity in visualization)
+y_pred = model(X_tensor).numpy()  # Get predictions from the model
+
+# Plot the original data points and the fitted curve (use the first feature)
+plt.scatter(X[:, 0], y, label="Data", color='blue')  # Plot first feature against target
+plt.plot(X[:, 0], y_pred, label="Fitted Curve (Model)", color='red')  # Plot predictions
+plt.legend()
+plt.xlabel('x1')
+plt.ylabel('y')
+plt.show()
+
+# Step 9: Print the final loss
+print(f"Final Loss: {history.history['loss'][-1]}")
+
