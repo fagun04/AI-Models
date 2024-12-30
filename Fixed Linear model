@@ -1,0 +1,48 @@
+import numpy as np
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
+# Generate some simple data (y = 2x + 1)
+X = np.array([1, 2, 3, 4, 5,6,9,10,11,], dtype=float)
+y = 2 * X + 1
+
+# Convert to TensorFlow tensors with explicit float32 data type
+X_tensor = tf.constant(X, dtype=tf.float32)
+y_tensor = tf.constant(y, dtype=tf.float32)
+
+# Create a simple linear model y = mx + b
+class LinearModel(tf.Module):
+    def __init__(self):
+        super().__init__()
+        self.m = tf.Variable(np.random.randn(), dtype=tf.float32)  # Slope
+        self.b = tf.Variable(np.random.randn(), dtype=tf.float32)  # Intercept
+
+    def __call__(self, x):
+        return self.m * x + self.b
+
+# Instantiate model
+model = LinearModel()
+
+# Loss function (Mean Squared Error)
+def loss_fn(model, x, y):
+    return tf.reduce_mean(tf.square(model(x) - y))
+
+# Optimizer
+optimizer = tf.optimizers.SGD(learning_rate=0.1)
+
+# Training loop
+for epoch in range(1000):
+    with tf.GradientTape() as tape:
+        loss = loss_fn(model, X_tensor, y_tensor)
+
+    gradients = tape.gradient(loss, [model.m, model.b])
+    optimizer.apply_gradients(zip(gradients, [model.m, model.b]))
+
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch}, Loss: {loss.numpy()}, m: {model.m.numpy()}, b: {model.b.numpy()}")
+
+# Plot the result
+plt.scatter(X, y, label="Data")
+plt.plot(X, model(X), label="Fitted Line", color='r')
+plt.legend()
+plt.show()
